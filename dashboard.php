@@ -45,20 +45,23 @@ $events = $result->fetch_all(MYSQLI_ASSOC);
                         <div class="form-group">
                             <label for="eventTitle">Event Title</label>
                             <input type="text" class="form-control" id="eventTitle" required>
+                            <div id="titleError" style="color:red" class="error"></div>
                         </div>
                         <div class="form-group">
                             <label for="eventStart">Start Time</label>
                             <input type="time" class="form-control" id="eventStart" required>
+                            <div id="startTimeError" style="color:red" class="error"></div>
                         </div>
                         <div class="form-group">
                             <label for="eventEnd">End Time</label>
                             <input type="time" class="form-control" id="eventEnd">
+                            <div id="endTimeError" style="color:red" class="error"></div>
                         </div>
                     </form>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-                    <button type="button" class="btn btn-primary" id="saveEvent">Save</button>
+                    <button type="button" class="btn btn-primary" id="saveEvent" disabled>Save</button>
                     <button type="button" class="btn btn-success" id="updateEvent">Update</button>
                     <button type="button" class="btn btn-danger" id="deleteEvent">Delete</button>
                 </div>
@@ -149,31 +152,94 @@ $events = $result->fetch_all(MYSQLI_ASSOC);
 
             // Fetch and display holidays //api
             $.ajax({
-                url: 'https://api.api-ninjas.com/v1/holidays',
-                method: 'GET',
-                data: {
-                    country: 'india',  // Replace 'india' with the desired country code//
-                    year: 2024,        // Replace 2024 with the desired year
-                    type: ''           // Replace '' with the desired holiday type if needed
-                },
-                headers: { 
-                    'X-Api-Key': 'fpCxKcXVGGgE807rBdGo0g==f62D9cgDZErKRFnu'  // Replace with your actual API key
-                },
-                success: function(data) {
-                    // Add holidays to the calendar
-                    var holidays = data.map(function(holiday) {
-                        return {
-                            title: holiday.name,
-                            start: holiday.date,
-                            color: 'red'
-                        };
-                    });
-                    $('#calendar').fullCalendar('addEventSource', holidays);
-                },
-                error: function(xhr, status, error) {
-                    console.error('Error fetching holidays:', status, error);
+                    url: 'https://api.api-ninjas.com/v1/holidays',
+                    method: 'GET',
+                    data: {
+                            country: 'india',  // Replace 'india' with the desired country code
+                            year: 2024,        // Replace 2024 with the desired year
+                            type: ''           // Replace '' with the desired holiday type if needed
+                          },
+                    headers: { 
+                           'X-Api-Key': 'fpCxKcXVGGgE807rBdGo0g==f62D9cgDZErKRFnu'  // Replace with your actual API key
+                          },
+                    success: function(data) {
+                            if (data && data.length > 0) {
+                                // Add holidays to the calendar
+                            var holidays = data.map(function(holiday) {
+                            return {
+                                    title: holiday.name,
+                                    start: holiday.date,
+                                    color: 'red'
+                                   };
+                                });
+                             $('#calendar').fullCalendar('addEventSource', holidays);
+                            } else {
+                                     alert('No holidays found for the specified criteria.');
+                            }
+                            },
+                                     error: function(xhr, status, error) {
+                                     alert('Error fetching holidays: ' + status + ' ' + error);
+                            }
+                   });
+        });
+    </script>
+        <script>
+        document.getElementById('eventTitle').addEventListener('input', validateForm);
+        document.getElementById('eventStart').addEventListener('input', validateForm);
+        document.getElementById('eventEnd').addEventListener('input', validateForm);
+
+        function validateForm() {
+            let isValid = true;
+            const title = document.getElementById('eventTitle').value;
+            const startTime = document.getElementById('eventStart').value;
+            const endTime = document.getElementById('eventEnd').value;
+
+            const titleError = document.getElementById('titleError');
+            const startTimeError = document.getElementById('startTimeError');
+            const endTimeError = document.getElementById('endTimeError');
+
+            // Clear previous errors
+            titleError.textContent = '';
+            startTimeError.textContent = '';
+            endTimeError.textContent = '';
+
+            // Check if title is entered
+            if (title.trim() === '') {
+                titleError.textContent = 'Title is required.';
+                isValid = false;
+            }
+
+            // Check if start time is in the past
+            const currentTime = new Date().toISOString().slice(0, 16);
+            const currentDate = new Date().toISOString().split('T')[0];
+            const startDateTime = new Date(currentDate + 'T' + startTime);
+            const now = new Date();
+
+            if (startTime && startDateTime < now) {
+                startTimeError.textContent = 'Start time cannot be in the past.';
+                isValid = false;
+            }
+
+            // Check if start time is before end time
+            if (startTime && endTime) {
+                if (startTime >= endTime) {
+                    endTimeError.textContent = 'End time must be after start time.';
+                    isValid = false;
                 }
-            });
+            }
+
+            // Enable or disable save button
+            document.getElementById('saveEvent').disabled = !isValid;
+
+            return isValid;
+        }
+
+        document.getElementById('saveEvent').addEventListener('click', function() {
+            if (validateForm()) {
+                // Proceed with form submission or further processing
+                console.log('Form is valid');
+                // You can add your form submission code here
+            }
         });
     </script>
 </body>

@@ -4,22 +4,32 @@ include('config.php');
 $message = '';
 session_start();
 
+$username_error = '';
+$password_error = '';
+
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $username = $_POST['username'];
     $password = $_POST['password'];
 
-    $sql = "SELECT id, password FROM users WHERE username = ?";
-    $stmt = $conn->prepare($sql);
-    $stmt->bind_param("s", $username);
-    $stmt->execute();
-    $stmt->store_result();
-    $stmt->bind_result($id, $hashed_password);
-
-    if ($stmt->fetch() && password_verify($password, $hashed_password)) {
-        $_SESSION['user_id'] = $id;
-        header("Location: dashboard.php");
+    // Validate username and password
+    if (!preg_match('/^[a-zA-Z]+$/', $username)) {
+        $username_error = "Username must contain only letters!";
+    } elseif (!preg_match('/^[0-9]+$/', $password)) {
+        $password_error = "Password must contain only numbers!";
     } else {
-        $message = "Invalid username or password!";
+        $sql = "SELECT id, password FROM users WHERE username = ?";
+        $stmt = $conn->prepare($sql);
+        $stmt->bind_param("s", $username);
+        $stmt->execute();
+        $stmt->store_result();
+        $stmt->bind_result($id, $hashed_password);
+
+        if ($stmt->fetch() && password_verify($password, $hashed_password)) {
+            $_SESSION['user_id'] = $id;
+            header("Location: dashboard.php");
+        } else {
+            $message = "Invalid username or password!";
+        }
     }
 }
 ?>
@@ -43,10 +53,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
               <div data-mdb-input-init class="form-outline mb-4 text-start">
                 <label class="form-label" for="username">Username</label>
                 <input type="text" id="username" class="form-control form-control-lg" name="username" required />
+                <div style="color:red" id="usernameError"><?php echo $username_error; ?></div>
               </div>
               <div data-mdb-input-init class="form-outline mb-4 text-start">
                 <label class="form-label" for="password">Password</label>
                 <input type="password" id="password" class="form-control form-control-lg" name="password" required/>
+                <div style="color:red" id="passwordError"><?php echo $password_error; ?></div>
               </div>
               <button data-mdb-button-init data-mdb-ripple-init class="btn btn-primary btn-lg btn-block" type="submit">Login</button>
             </form>
@@ -63,6 +75,35 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js" integrity="sha384-IQsoLXl5PILFhosVNubq5LC7Qb9DXgDA9i+tQ8Zj3iwWAwPtgFTxbJ8NT4GN1R8p" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.min.js" integrity="sha384-cVKIPhGWiC2Al4u+LWgxfKTRIcfu0JTxR+EQDz/bgldoEyl4H0zUF0QKbrJ0EcQF" crossorigin="anonymous"></script>
+<script>
+        function validateUsername() {
+            var username = document.getElementById("username").value;
+            var usernameError = document.getElementById("usernameError");
+            if (!/^[a-zA-Z]+$/.test(username)) {
+                usernameError.textContent = "Username must contain only letters!";
+            } else {
+                usernameError.textContent = "";
+            }
+        }
+
+        function validatePassword() {
+            var password = document.getElementById("password").value;
+            var passwordError = document.getElementById("passwordError");
+            if (!/^[0-9]+$/.test(password)) {
+                passwordError.textContent = "Password must contain only numbers!";
+            } else {
+                passwordError.textContent = "";
+            }
+        }
+
+        function validateForm() {
+            validateUsername();
+            validatePassword();
+            var usernameError = document.getElementById("usernameError").textContent;
+            var passwordError = document.getElementById("passwordError").textContent;
+            return usernameError === "" && passwordError === "";
+        }
+</script>
 </body>
 </html>
 <!-- <form >
