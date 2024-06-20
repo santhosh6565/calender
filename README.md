@@ -1,4 +1,5 @@
 **Calendar Management System Overview**
+
 **Second step of the process (20/6/2024): add validation and error handling for the API.**
 
 **Tech Stack:** HTML, CSS, Bootstrap, PHP, JavaScript, MySQL
